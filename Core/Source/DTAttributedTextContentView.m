@@ -430,7 +430,21 @@ static Class _layerClassToUseForDTAttributedTextContentView = nil;
 		width = self.bounds.size.width;
 	}
 	
-	CGSize neededSize = [self.layouter suggestedFrameSizeToFitEntireStringConstraintedToWidth:width-edgeInsets.left-edgeInsets.right];
+	// fix from https://github.com/kcoop/DTCoreText/commit/9e4f30542f70caa3cfb457516465c5a7076cb0b5
+	
+	CGSize neededSize;
+	
+	if (_attributedString) {
+		DTCoreTextLayouter *tempLayouter = [[DTCoreTextLayouter alloc] initWithAttributedString:_attributedString];
+		DTCoreTextLayoutFrame *tempLayoutFrame = [tempLayouter layoutFrameWithRect:CGRectMake(0.0, 0.0, width, CGFLOAT_OPEN_HEIGHT) range:NSMakeRange(0, 0)];
+		// Getting the lines has the side effect of setting the frame.
+		NSArray *ignoreMe = tempLayoutFrame.lines;
+		// This is just to shut the compiler up - it will be overwritten by the following line.
+		neededSize.width = ignoreMe.count;
+		neededSize = tempLayoutFrame.frame.size;
+	} else {
+		neededSize = CGSizeMake(width, 0.0f);
+	}	
 	
 	// add vertical insets
 	neededSize.height += edgeInsets.top + edgeInsets.bottom;
